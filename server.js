@@ -9,9 +9,7 @@ const server = http.createServer(app);
 // ตั้งค่า Socket.io สำหรับ Render.com
 const io = socketIo(server, {
     cors: {
-        origin: process.env.NODE_ENV === 'production' 
-            ? ["https://game-eumt.onrender.com"] // เปลี่ยนเป็นโดเมนจริงของคุณ
-            : ["http://localhost:3000", "http://127.0.0.1:3000"],
+        origin: "*,
         methods: ["GET", "POST"],
         credentials: true
     },
@@ -500,3 +498,4 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Promise ที่ไม่ได้รับการจัดการ:', promise, 'เหตุผล:', reason);
 });
+
