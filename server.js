@@ -157,14 +157,18 @@ io.on('connection', (socket) => {
             });
             
             socket.join(data.roomCode);
+            const existingPlayer = room.players[0]; // ผู้เล่นคนที่ 1
+            const newPlayer = room.players[1];      // ผู้เล่นคนที่ 2
+            
+            // ส่งให้ผู้เล่นคนที่ 2: ได้รับชื่อผู้เล่นคนที่ 1
             socket.emit('joined_room', { 
                 roomCode: data.roomCode, 
-                color: 'black' 
+                color: 'black',
+                opponentName: existingPlayer.name
             });
             
-            // แจ้งเตือนผู้เล่นคนแรก
-            const firstPlayer = room.players[0];
-            io.to(firstPlayer.id).emit('opponent_joined', { 
+            // ส่งให้ผู้เล่นคนที่ 1: ได้รับชื่อผู้เล่นคนที่ 2
+            io.to(existingPlayer.id).emit('opponent_joined', { 
                 opponentName: data.playerName 
             });
             
@@ -498,5 +502,3 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Promise ที่ไม่ได้รับการจัดการ:', promise, 'เหตุผล:', reason);
 });
-
-
