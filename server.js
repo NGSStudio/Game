@@ -5,16 +5,44 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
+
+// ตั้งค่า Socket.io สำหรับ Render.com
 const io = socketIo(server, {
     cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
-    }
+        origin: process.env.NODE_ENV === 'production' 
+            ? ["https://game-eumt.onrender.com"] // เปลี่ยนเป็นโดเมนจริงของคุณ
+            : ["http://localhost:3000", "http://127.0.0.1:3000"],
+        methods: ["GET", "POST"],
+        credentials: true
+    },
+    transports: ['websocket', 'polling'] // เพิ่มการรองรับหลายวิธี
 });
 
 // เก็บข้อมูลห้องและผู้เล่น
 const rooms = new Map();
 const players = new Map();
+
+// ตั้งค่า CORS สำหรับ Express
+app.use((req, res, next) => {
+    const allowedOrigins = process.env.NODE_ENV === 'production' 
+        ? ["https://your-frontend-domain.onrender.com"] // เปลี่ยนเป็นโดเมนจริงของคุณ
+        : ["http://localhost:3000", "http://127.0.0.1:3000"];
+    
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+    
+    next();
+});
 
 // ให้บริการไฟล์ static
 app.use(express.static(path.join(__dirname, 'public')));
@@ -30,7 +58,16 @@ app.get('/status', (req, res) => {
         status: 'online',
         rooms: rooms.size,
         players: players.size,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development'
+    });
+});
+
+// Health check สำหรับ Render.com
+app.get('/health', (req, res) => {
+    res.status(200).json({ 
+        status: 'OK', 
+        timestamp: new Date().toISOString() 
     });
 });
 
@@ -319,8 +356,8 @@ io.on('connection', (socket) => {
     });
     
     // ตัดการเชื่อมต่อ
-    socket.on('disconnect', () => {
-        console.log('ผู้ใช้ตัดการเชื่อมต่อ:', socket.id);
+    socket.on('disconnect', (reason) => {
+        console.log('ผู้ใช้ตัดการเชื่อมต่อ:', socket.id, 'เหตุผล:', reason);
         
         const player = players.get(socket.id);
         if (player) {
@@ -449,8 +486,17 @@ function createInitialBoard() {
 
 // เริ่มเซิร์ฟเวอร์
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 เซิร์ฟเวอร์กำลังทำงานบนพอร์ต ${PORT}`);
-    console.log(`🌐 เปิดเบราว์เซอร์และไปที่: http://localhost:${PORT}`);
+    console.log(`🌐 สภาพแวดล้อม: ${process.env.NODE_ENV || 'development'}`);
     console.log(`📊 ตรวจสอบสถานะเซิร์ฟเวอร์: http://localhost:${PORT}/status`);
+});
+
+// จัดการข้อผิดพลาดที่ไม่คาดคิด
+process.on('uncaughtException', (error) => {
+    console.error('ข้อผิดพลาดที่ไม่คาดคิด:', error);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Promise ที่ไม่ได้รับการจัดการ:', promise, 'เหตุผล:', reason);
 });
