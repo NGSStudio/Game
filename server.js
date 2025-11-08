@@ -9,7 +9,7 @@ const server = http.createServer(app);
 // ตั้งค่า Socket.io สำหรับ Render.com
 const io = socketIo(server, {
     cors: {
-        origin: "*,
+        origin: "*",
         methods: ["GET", "POST"],
         credentials: true
     },
@@ -498,4 +498,5 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Promise ที่ไม่ได้รับการจัดการ:', promise, 'เหตุผล:', reason);
 });
+
 
