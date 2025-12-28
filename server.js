@@ -1,6 +1,6 @@
 const http = require('http');
 const net = require('net');
-
+const PORT = process.env.PORT || 65405;
 // ====== ฟังก์ชัน pingServer แบบ TCP raw ======
 async function pingServer(hostPort) {
     return new Promise((resolve) => {
@@ -79,4 +79,5 @@ const server = http.createServer(async (req, res) => {
     }
 });
 
-server.listen(65405, () => console.log('Ping API server running on port 65405'));
+server.listen(PORT, () => console.log(`[HTTP] Ping API server running on port ${PORT}`));
+
